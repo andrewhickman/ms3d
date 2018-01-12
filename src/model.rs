@@ -1,4 +1,7 @@
 use std::path::PathBuf;
+use std::io::Read;
+
+use super::{Reader, Result};
 
 /// Represents an ms3d model file.
 #[derive(Clone, Debug)]
@@ -14,6 +17,13 @@ pub struct Model {
     pub vertex_ex_info: VertexExInfo,
     pub joint_ex_info: JointExInfo,
     pub model_ex_info: ModelExInfo,
+}
+
+impl Model {
+    /// Read an ms3d model file from a reader.
+    pub fn from_reader<R: Read>(rdr: R) -> Result<Self> {
+        Reader::new(rdr).read_model()
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -1,5 +1,6 @@
-//! This crate provides a set of types for working with ms3d model
-//! files as well as a parser.
+//! This crate provides utilities working with ms3d models. The main entry
+//! point for this crate is the [`Model::from_reader`](struct.Model.html#method.from_reader)
+//! function which parses a model file.
 
 #[macro_use]
 extern crate bitflags;
@@ -15,7 +16,7 @@ pub use failure::Error;
 
 use memchr::memchr;
 
-use std::io::{self, Read};
+use std::io::Read;
 use std::{mem, ptr, str, u8};
 use std::path::PathBuf;
 
@@ -186,8 +187,16 @@ impl<R: Read> Reader<R> {
     }
 
     fn read_key_frame_data(&mut self) -> Result<KeyFrameData> {
-        let de::KeyFrameData { animation_fps, current_time, total_frames } = unsafe { self.read_type()? };
-        Ok(KeyFrameData { animation_fps, current_time, total_frames })
+        let de::KeyFrameData {
+            animation_fps,
+            current_time,
+            total_frames,
+        } = unsafe { self.read_type()? };
+        Ok(KeyFrameData {
+            animation_fps,
+            current_time,
+            total_frames,
+        })
     }
 
     fn read_joints(&mut self) -> Result<Vec<Joint>> {
@@ -211,7 +220,8 @@ impl<R: Read> Reader<R> {
         let parent_name = convert_string(&parent_name)?;
 
         let key_frames_rot = self.read_vec(num_key_frames_rot as usize, Self::read_key_frame_rot)?;
-        let key_frames_trans = self.read_vec(num_key_frames_trans as usize, Self::read_key_frame_pos)?;
+        let key_frames_trans =
+            self.read_vec(num_key_frames_trans as usize, Self::read_key_frame_pos)?;
 
         Ok(Joint {
             flags,
@@ -286,17 +296,33 @@ impl<R: Read> Reader<R> {
 
     fn read_vertex_ex_1(&mut self) -> Result<VertexEx1> {
         let de::VertexEx1 { bone_ids, weights } = unsafe { self.read_type()? };
-        Ok(VertexEx1 { bone_ids, weights})
+        Ok(VertexEx1 { bone_ids, weights })
     }
 
     fn read_vertex_ex_2(&mut self) -> Result<VertexEx2> {
-        let de::VertexEx2 { bone_ids, weights, extra } = unsafe { self.read_type()? };
-        Ok(VertexEx2 { bone_ids, weights, extra })
+        let de::VertexEx2 {
+            bone_ids,
+            weights,
+            extra,
+        } = unsafe { self.read_type()? };
+        Ok(VertexEx2 {
+            bone_ids,
+            weights,
+            extra,
+        })
     }
 
     fn read_vertex_ex_3(&mut self) -> Result<VertexEx3> {
-        let de::VertexEx3 { bone_ids, weights, extra } = unsafe { self.read_type()? };
-        Ok(VertexEx3 { bone_ids, weights, extra })
+        let de::VertexEx3 {
+            bone_ids,
+            weights,
+            extra,
+        } = unsafe { self.read_type()? };
+        Ok(VertexEx3 {
+            bone_ids,
+            weights,
+            extra,
+        })
     }
 
     fn read_joint_ex_info(&mut self, len: usize) -> Result<JointExInfo> {
@@ -307,7 +333,10 @@ impl<R: Read> Reader<R> {
             sub_version
         );
         let joint_ex = self.read_vec(len, Self::read_joint_ex)?;
-        Ok(JointExInfo { sub_version, joint_ex })
+        Ok(JointExInfo {
+            sub_version,
+            joint_ex,
+        })
     }
 
     fn read_joint_ex(&mut self) -> Result<JointEx> {
@@ -323,17 +352,27 @@ impl<R: Read> Reader<R> {
             sub_version
         );
         let model_ex = self.read_model_ex()?;
-        Ok(ModelExInfo { sub_version, model_ex })
+        Ok(ModelExInfo {
+            sub_version,
+            model_ex,
+        })
     }
 
     fn read_model_ex(&mut self) -> Result<ModelEx> {
-        let de::ModelEx { joint_size, transparency_mode, alpha_ref } = unsafe { self.read_type()? };
-        Ok(ModelEx { joint_size, transparency_mode, alpha_ref })
+        let de::ModelEx {
+            joint_size,
+            transparency_mode,
+            alpha_ref,
+        } = unsafe { self.read_type()? };
+        Ok(ModelEx {
+            joint_size,
+            transparency_mode,
+            alpha_ref,
+        })
     }
 
     fn read_string(&mut self, len: usize) -> Result<String> {
-        self.read(len)?;
-        Ok(str::from_utf8(unsafe { self.buf.get_unchecked(..len) })?.to_owned())
+        Ok(str::from_utf8(self.read(len)?)?.to_owned())
     }
 
     fn read_vec<T, F>(&mut self, len: usize, f: F) -> Result<Vec<T>>
@@ -356,15 +395,17 @@ impl<R: Read> Reader<R> {
     }
 
     unsafe fn read_type<T>(&mut self) -> Result<T> {
-        self.read(mem::size_of::<T>())?;
-        Ok(ptr::read_unaligned(self.buf.as_slice() as *const [u8]
-            as *const T))
+        Ok(ptr::read_unaligned(
+            self.read(mem::size_of::<T>())? as *const [u8] as *const T,
+        ))
     }
 
-    fn read(&mut self, len: usize) -> io::Result<()> {
+    fn read(&mut self, len: usize) -> Result<&[u8]> {
         unsafe {
             self.buf.reserve(len);
-            self.rdr.read_exact(&mut self.buf.get_unchecked_mut(..len))
+            let slice = self.buf.get_unchecked_mut(..len);
+            self.rdr.read_exact(slice)?;
+            Ok(slice)
         }
     }
 }
