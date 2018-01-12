@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::io::Read;
+use std::io;
 
 use super::{Reader, Result};
 
@@ -21,8 +21,13 @@ pub struct Model {
 
 impl Model {
     /// Read an ms3d model file from a reader.
-    pub fn from_reader<R: Read>(rdr: R) -> Result<Self> {
-        Reader::new(rdr).read_model()
+    pub fn from_reader<R: io::Read>(rdr: R) -> Result<Self> {
+        Reader::from_io_reader(rdr).read_model()
+    }
+
+    /// Read an ms3d model file from a slice of bytes.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        Reader::from_slice(bytes).read_model()
     }
 }
 
