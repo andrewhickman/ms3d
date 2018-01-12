@@ -1,0 +1,13 @@
+[package]
+name = "ms3d"
+description = "ms3d file parsing library"
+documentation = "https://docs.rs/ms3d/"
+license = "MIT"
+keywords = ["decode", "ms3d", "3d", "model", "mesh"]
+version = "0.1.0"
+authors = ["Andrew Hickman <andrew.hickman1@sky.com>"]
+
+[dependencies]
+bitflags = "1"
+failure = "0.1"
+memchr = "2"
