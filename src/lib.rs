@@ -15,7 +15,7 @@ mod read;
 pub use model::*;
 pub use failure::Error;
 
-use read::{Read, IoReader, SliceReader};
+use read::{BufReadExact, IoReader, SliceReader};
 
 use memchr::memchr;
 
@@ -25,7 +25,7 @@ use std::path::PathBuf;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-struct Reader<R: Read> {
+struct Reader<R: BufReadExact> {
     rdr: R,
 }
 
@@ -41,7 +41,7 @@ impl<'a> Reader<SliceReader<'a>> {
     }
 }
 
-impl<R: Read> Reader<R> {
+impl<R: BufReadExact> Reader<R> {
     fn read_model(&mut self) -> Result<Model> {
         let header = self.read_header()?;
         let vertices = self.read_vertices()?;
@@ -374,7 +374,7 @@ impl<R: Read> Reader<R> {
     }
 
     fn read_string(&mut self, len: usize) -> Result<String> {
-        Ok(str::from_utf8(self.rdr.read(len)?)?.to_owned())
+        Ok(str::from_utf8(self.rdr.buf_read_exact(len)?)?.to_owned())
     }
 
     fn read_vec<T, F>(&mut self, len: usize, f: F) -> Result<Vec<T>>
@@ -398,7 +398,7 @@ impl<R: Read> Reader<R> {
 
     unsafe fn read_type<T>(&mut self) -> Result<T> {
         Ok(ptr::read_unaligned(
-            self.rdr.read(mem::size_of::<T>())? as *const [u8] as *const T,
+            self.rdr.buf_read_exact(mem::size_of::<T>())? as *const [u8] as *const T,
         ))
     }
 }

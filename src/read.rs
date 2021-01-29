@@ -1,7 +1,7 @@
 use std::io;
 
-pub(crate) trait Read {
-    fn read(&mut self, len: usize) -> io::Result<&[u8]>;
+pub(crate) trait BufReadExact {
+    fn buf_read_exact(&mut self, len: usize) -> io::Result<&[u8]>;
 }
 
 pub(crate) struct IoReader<R: io::Read> {
@@ -15,8 +15,8 @@ impl<R: io::Read> IoReader<R> {
     }
 }
 
-impl<R: io::Read> Read for IoReader<R> {
-    fn read(&mut self, len: usize) -> io::Result<&[u8]> {
+impl<R: io::Read> BufReadExact for IoReader<R> {
+    fn buf_read_exact(&mut self, len: usize) -> io::Result<&[u8]> {
         unsafe {
             self.buf.reserve(len);
             let slice = self.buf.get_unchecked_mut(..len);
@@ -36,8 +36,8 @@ impl<'a> SliceReader<'a> {
     }
 }
 
-impl<'a> Read for SliceReader<'a> {
-    fn read(&mut self, len: usize) -> io::Result<&[u8]> {
+impl<'a> BufReadExact for SliceReader<'a> {
+    fn buf_read_exact(&mut self, len: usize) -> io::Result<&[u8]> {
         if len > self.slice.len() {
             return Err(io::ErrorKind::UnexpectedEof.into())
         }
