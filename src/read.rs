@@ -17,12 +17,9 @@ impl<R: io::Read> IoReader<R> {
 
 impl<R: io::Read> BufReadExact for IoReader<R> {
     fn buf_read_exact(&mut self, len: usize) -> io::Result<&[u8]> {
-        unsafe {
-            self.buf.reserve(len);
-            let slice = self.buf.get_unchecked_mut(..len);
-            self.rdr.read_exact(slice)?;
-            Ok(slice)
-        }
+        self.buf.resize(len, 0);
+        self.rdr.read_exact(self.buf.as_mut_slice())?;
+        Ok(self.buf.as_slice())
     }
 }
 
